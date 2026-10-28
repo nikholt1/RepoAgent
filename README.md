@@ -215,6 +215,17 @@ RETURN
     size(r.embedding) AS embeddingDimensions;
 ```
 
+## Sources
+## URLs
+
+| URL | Used for | Workflow |
+|---|---|---|
+| `https://api.github.com/users/nikholt1/repos` | Fetching public GitHub repositories | `graphAndVectorEmbedding.json` |
+| `http://host.docker.internal:11434/api/embed` | Generating embeddings with Ollama (`nomic-embed-text`) | `graphAndVectorEmbedding.json`, `publishedSearchRepos.json` |
+| `http://host.docker.internal:7474/db/repos/query/v2` | Sending Cypher queries to Neo4j | All three workflows |
+| `/workflow/HDdthqjIfjBwGvHE` | Calling the `search repos` workflow for vector search | `embedAgent.json` |
+| `45013730-9d9f-4f17-b31c-a08419e5b825` | Chat trigger webhook ID | `embedAgent.json` |
+
 ## Setup
 1. Setup neo4j to hold a instance with a database
 2. Setup n8n in docker
