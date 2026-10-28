@@ -22,7 +22,7 @@ Workflow: [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
 
 ## Agent
 
-![Agent workflow](assets/agentSucess.png)
+![Agent workflow](assets/agentSuccess.png)
 
 The agent has a system prompt requiring it to attempt both search tools before answering:
 
@@ -72,6 +72,13 @@ Each repository connects to its languages through `USES_LANGUAGE` relationships.
 ![Stored vector embeddings](assets/vetorembeddings2.png)
 
 Each repository has an `embedding` property containing 768 numerical values. The vector index `repository_embedding_index` is used to find repositories similar to an embedded query.
+
+## Examples
+1. Small prompt causes error
+When the prompt is too small, it seems like the agent fails to retrieve the GRAPH RAG, for some reason it does not see the necessity to call the VECTOR RAG at all.
+The error message states that the database might be offline, and i get a error code 400.
+![Short Prompt](assets/failedAgentOnGraphRag.png)
+
 
 ## Setup
 
