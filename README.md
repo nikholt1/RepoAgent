@@ -224,4 +224,4 @@ RETURN
 5. Run the `graphAndVectorEmbedding.json` to make neo4j have the correctly embedded data
 6. now you can use the `embedAgent.json` workflow to prompt the ollama LLM
 
-**Note:** Configure credentials securely in n8n before sharing or publishing workflow exports. The workflow endpoints and credentials may need to be adjusted for another environment.
+**Note:** Make sure Neo4j, n8n, and Ollama are configured correctly and can communicate with each other. You must have the required Ollama models (llama3.2 and nomic-embed-text) installed, configure the necessary URLs and credentials, and ensure the vector index is created before running the repository search workflow.
