@@ -22,7 +22,7 @@ Workflow: [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
 
 ## Agent
 
-![Agent workflow](assets/agent.png)
+![Agent workflow](assets/agentSucess.png)
 
 The agent has a system prompt requiring it to attempt both search tools before answering:
 
