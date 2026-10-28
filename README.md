@@ -93,20 +93,28 @@ i am making a repo that should use graphs use both Graph Rag Search the Vector R
 ```
 ![Short Prompt](assets/agentPromptOnlyVector.png)
 
+3. Both RAG success prompt
+The prompt states that the agent should like "2." prompt use the Vector and the Graph RAG, but more explicitely tells it to search for specific cases. This might have caused the agent to evaluate the responses more carefully and set its threshold for compatibility of the repos, so how similar they are in the Graph RAG, for it to then look for the Vector RAG to get a more refined answer.
+BUT we still got an error message even though it was a success
+**promp**
+
+```
+I am creating a repository that will use graphs, and i want to find existing repositories or implementations that make it quick and easy to integrate and work with graphs. Search my repositories using both Graph RAG and Vector RAG to identify relevant projects, libaries or reusable code that could help me implement graph functionality with minimal setup and boilerplate Recommend the most relevannt options and explain briefly what i could reuse from each.
+```
+![Short Prompt](assets/agent.png)
+
+
+4. Both RAG success and system response
+We used the same prompt as in example 3. and this time the LLM responded with text.
+![Short Prompt](assets/agentSuccess.png)
+
 ## Setup
+1. Setup neo4j to hold a instance with a database
+2. Setup n8n in docker
+3. import `embedAgent.json`, `graphAndVectorEmbedding.json` and `publishedSearchRepos.json` into your workflows
 
-1. Start Neo4j and Ollama.
-2. Pull the required models:
-
-   ```bash
-   ollama pull llama3.2
-   ollama pull nomic-embed-text
-   ```
-
-3. Import the three workflow JSON files into n8n.
-4. Configure the Ollama and Neo4j connections and verify the database endpoint.
-5. Create and verify the Neo4j vector index `repository_embedding_index` with 768 dimensions and cosine similarity.
-6. Run the embedding workflow to populate the graph and embeddings.
-7. Activate the workflows and test the agent through the n8n chat interface.
+4. Change the URL in the `Fetch public github repositories` node in the `graphAndVectorEmbedding.json` workflow
+5. Run the `graphAndVectorEmbedding.json` to make neo4j have the correctly embedded data
+6. now you can use the `embedAgent.json` workflow to prompt the ollama LLM
 
 **Note:** Configure credentials securely in n8n before sharing or publishing workflow exports. The workflow endpoints and credentials may need to be adjusted for another environment.
