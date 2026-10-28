@@ -75,6 +75,7 @@ Each repository has an `embedding` property containing 768 numerical values. The
 
 ## Examples
 1. Small prompt causes error
+
 When the prompt is too small, it seems like the agent fails to retrieve the GRAPH RAG, for some reason it does not see the necessity to call the VECTOR RAG at all.
 The error message states that the database might be offline, and i get a error code 400.
 **prompt**
@@ -85,6 +86,7 @@ i am making a repo that should use graphs use
 ![Short Prompt](assets/failedAgentOnGraphRag.png)
 
 2. Explicitely ask for GRAPH and VECTOR RAG results
+
 The prompt explicitely states that the agent should use the Graph Rag and the Vector RAG but the agent determines only the need for the Vector RAG
 **promp**
 
@@ -94,6 +96,7 @@ i am making a repo that should use graphs use both Graph Rag Search the Vector R
 ![Short Prompt](assets/agentPromptOnlyVector.png)
 
 3. Both RAG success prompt
+
 The prompt states that the agent should like "2." prompt use the Vector and the Graph RAG, but more explicitely tells it to search for specific cases. This might have caused the agent to evaluate the responses more carefully and set its threshold for compatibility of the repos, so how similar they are in the Graph RAG, for it to then look for the Vector RAG to get a more refined answer.
 BUT we still got an error message even though it was a success
 **promp**
@@ -105,6 +108,7 @@ I am creating a repository that will use graphs, and i want to find existing rep
 
 
 4. Both RAG success and system response
+
 We used the same prompt as in example 3. and this time the LLM responded with text.
 ![Short Prompt](assets/agentSuccess.png)
 
