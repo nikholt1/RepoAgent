@@ -24,8 +24,6 @@ Workflow: [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
 
 ![Agent workflow](assets/agent.png)
 
-The agent receives questions through the n8n chat trigger and uses the `Llama3.2:latest` model through Ollama to interpret the question and formulate an answer.
-
 The agent has a system prompt requiring it to attempt both search tools before answering:
 
 - **Graph RAG Search:** Connects directly to Neo4j and searches repository names, descriptions and programming languages.
