@@ -81,7 +81,7 @@ The error message states that the database might be offline, and i get a error c
 **prompt**
 
 ```
-i am making a repo that should use graphs use
+i am making a repo that should use graphs 
 ```
 ![Short Prompt](assets/failedAgentOnGraphRag.png)
 
