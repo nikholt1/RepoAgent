@@ -45,39 +45,7 @@ It then queries Neo4j's `repository_embedding_index` and retrieves the five clos
 
 Workflow: [`publishedSearchRepos.json`](publishedSearchRepos.json)
 
-## Agent calls and results
 
-The following examples show how the agent uses both tools. Add the actual execution screenshots or logs from n8n for each example.
-
-### Example 1 — Technology search
-
-**Question:** Which repositories use Java?
-
-- Graph RAG call: `[Insert tool input and retrieved results]`
-- Vector RAG call: `[Insert tool input and retrieved results]`
-- Agent answer: `[Insert actual answer]`
-
-**Assessment:** `[Briefly assess the relevance and completeness of the results.]`
-
-### Example 2 — Semantic search
-
-**Question:** Which repositories could help me build a graph-based application?
-
-- Graph RAG call: `[Insert tool input and retrieved results]`
-- Vector RAG call: `[Insert tool input and retrieved results]`
-- Agent answer: `[Insert actual answer]`
-
-**Assessment:** `[Explain whether semantic search found relevant projects beyond direct keyword matches.]`
-
-### Example 3 — Limitation
-
-**Question:** Which repository contains a specific feature that is not documented in its metadata?
-
-- Graph RAG call: `[Insert tool input and retrieved results]`
-- Vector RAG call: `[Insert tool input and retrieved results]`
-- Agent answer: `[Insert actual answer]`
-
-**Assessment:** `[Explain whether the available data was sufficient or whether the agent could not verify the feature.]`
 
 ## Data sources and Neo4j
 
