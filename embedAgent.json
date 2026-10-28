@@ -1,0 +1,212 @@
+{
+  "name": "Chat Agent - Graph RAG + Vector RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Ask me about your repositories, their technologies, or projects similar to a description.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -336,
+        -112
+      ],
+      "id": "427a3ec1-cc8c-484f-915b-5274ee4c7354",
+      "name": "When chat message received",
+      "webhookId": "45013730-9d9f-4f17-b31c-a08419e5b825"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a repository assistant with access to two search tools: Graph RAG Search and Vector RAG Search.\n\n**MANDATORY TOOL USAGE:**\n\nFor every repository-related question or request for recommendations, you MUST call BOTH Graph RAG Search AND Vector RAG Search before answering. This is mandatory, regardless of whether you believe one tool alone is sufficient.\n\n- **Graph RAG Search:** Retrieves repository information using matching names, descriptions, programming languages, and stored relationships.\n- **Vector RAG Search:** Retrieves repositories based on semantic similarity to the user's request.\n\nAlways search with both tools to maximize coverage. Do not skip either tool, even if the first tool returns sufficient results. Wait for both tool results before formulating your answer.\n\n**Answering rules:**\n\n1. Base all factual claims about stored repositories exclusively on information returned by the two search tools.\n2. Combine and compare the results from both tools to produce the most complete and relevant answer possible.\n3. Use the results to identify relevant repositories, explain their relevance, and recommend potential reuse where supported by the returned data.\n4. Do not invent repository names, descriptions, programming languages, relationships, implementation details, or search results.\n5. If one tool returns no results or fails, use the results from the other tool, clearly disclose the issue, and never pretend both searches succeeded.\n6. If the returned information is insufficient to support a conclusion, explicitly state what cannot be determined.\n7. Prioritize answer quality, completeness, and relevance over speed. Never sacrifice the required use of both tools for convenience.\n\n**Final requirement:** Do not answer a repository-related request until you have attempted both Graph RAG Search and Vector RAG Search."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        -112
+      ],
+      "id": "342b68ff-65d9-4adf-9ee8-a7debe2fbdb7",
+      "name": "Repository AI Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search the repository graph for matching repository names, descriptions, programming languages, and language relationships. Use this for exact or keyword-based questions. Input is a search phrase.",
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/repos/query/v2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "Basic bmVvNGo6dGVzdDEyMzQ1Ng=="
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"statement\": \"MATCH (r:Repository)\\nWHERE toLower(coalesce(r.name, '')) CONTAINS toLower($searchTerm)\\n   OR toLower(coalesce(r.description, '')) CONTAINS toLower($searchTerm)\\n   OR any(language IN coalesce(r.languages, []) WHERE toLower(language) CONTAINS toLower($searchTerm))\\nOPTIONAL MATCH (r)-[:USES_LANGUAGE]->(l:Language)\\nRETURN r.name AS name,\\n       r.description AS description,\\n       r.languages AS languages,\\n       collect(DISTINCT l.name) AS relatedLanguages\\nLIMIT 10\",\n  \"parameters\": {\n    \"searchTerm\": \"{query}\"\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -16,
+        160
+      ],
+      "id": "9aa7ed4e-6282-4372-93f1-ec1d806adecc",
+      "name": "Graph RAG Search"
+    },
+    {
+      "parameters": {
+        "model": "Llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        96
+      ],
+      "id": "def30df2-59ef-43de-bdbc-b1a5e108acd0",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "NaHXULP29jhTpfIv",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Repository Chat Agent — Graph RAG vs. Vector RAG\n\nThe AI agent receives questions through the chat and chooses between two search tools.\n\n- **Graph RAG:** Searches Neo4j directly for matching repository names, descriptions, and programming languages. It uses structured data and relationships without generating an embedding.\n- **Vector RAG:** Sends the question to Ollama to generate an embedding, then searches Neo4j for the five most semantically similar repositories.\n\nBoth tools return their results to the AI agent, which uses them to formulate an answer. Graph RAG is suited to keyword-based and structured searches, while Vector RAG is suited to finding projects based on meaning and similarity.",
+        "height": 416,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        320,
+        -192
+      ],
+      "typeVersion": 1,
+      "id": "d011a69a-d383-45f6-b9d3-fb90b3bb354d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "description": "=",
+        "workflowId": {
+          "__rl": true,
+          "value": "HDdthqjIfjBwGvHE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HDdthqjIfjBwGvHE",
+          "cachedResultName": "search repos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        160
+      ],
+      "id": "720ac881-49d9-49e5-94cd-db3f32ba471e",
+      "name": "Call 'search repos'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Repository AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Graph RAG Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Repository AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Repository AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'search repos'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Repository AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2fdbac7b-d91d-4557-b35d-2ffae9d89897",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "nodeGroups": [],
+  "id": "WeaOWJBStTQ2Ftw2",
+  "tags": []
+}

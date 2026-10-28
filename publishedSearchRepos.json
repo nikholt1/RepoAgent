@@ -1,0 +1,234 @@
+{
+  "name": "search repos",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1dd0f740-4762-40f4-ab22-411869ab56b7",
+              "name": "query",
+              "value": "String",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        608,
+        0
+      ],
+      "id": "63c2959f-7272-439e-b685-1ec1e5b5edc6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/repos/query/v2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "Basic bmVvNGo6dGVzdDEyMzQ1Ng=="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  statement: \"CALL db.index.vector.queryNodes('repository_embedding_index', $k, $embedding) YIELD node, score RETURN node.name AS name, node.description AS description, node.languages AS languages, score ORDER BY score DESC\",\n  parameters: {\n    k: $json.k,\n    embedding: $json.embedding\n  }\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "1df8838a-5759-4ce3-9c5e-43433be2da42",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nconst query = data.embeddings?.[0];\n\nif (!Array.isArray(query) || query.length !== 768) {\n  throw new Error(\n    `Embedding skal indeholde 768 tal, men modtog ${\n      Array.isArray(query) ? query.length : 'ingen vektor'\n    }. Kontrollér Ollama-outputtet.`\n  );\n}\n\nreturn [{\n  json: {\n    k: 5,\n    embedding: query\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "917a0dec-aa6d-4a65-b4bf-f16373205a40",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "243f1fe7-cb3b-454c-81ff-44d66c167542",
+      "name": "When Executed by Another Workflow",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    model: \"nomic-embed-text\",\n    input: $json.query\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        832,
+        0
+      ],
+      "id": "89b4cdd5-8be7-4132-b891-d639348f284d",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst data = response.body?.data ?? response.data;\n\nif (!data?.fields || !data?.values) {\n  throw new Error(\n    'Neo4j response mangler data.fields eller data.values'\n  );\n}\n\nconst fields = data.fields;\nconst repositories = data.values.map(row =>\n  Object.fromEntries(\n    fields.map((field, index) => [field, row[index]])\n  )\n);\n\nreturn [\n  {\n    json: {\n      count: repositories.length,\n      repositories\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "63f4fc71-2595-44bc-9443-e19cc02f5cd9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "content": "## Execution\nExectutes on workflow call when the AI agent uses the \"call search repos\" tool"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "5fc872dc-191a-4a07-a564-6e9a013e01d3",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Embed the llama input data, so that we have the embedding values we can use to see the closes repos"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        736,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "5d0bc37f-9243-40c3-b072-4e8e3a3b3768",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Fetch vector embedded repos and compare.\n\nFormat data and return"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1296,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "dc9d40cb-6022-48f3-9813-7d4f1e23b08c",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "aca6e456-c6ad-4623-a55a-50652a03c9a3",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "nodeGroups": [],
+  "id": "HDdthqjIfjBwGvHE",
+  "tags": []
+}

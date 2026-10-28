@@ -1,0 +1,430 @@
+{
+  "name": "dataFetchForEmbedding - Graph RAG + Vector RAG",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -64
+      ],
+      "id": "504c98e7-f86e-46ad-8b0a-7e78f076ed0a",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        128
+      ],
+      "id": "86a83184-409c-4514-9074-69390b356945",
+      "name": "Schedule Trigger (optional)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/users/nikholt1/repos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -336,
+        -160
+      ],
+      "id": "40f2ee2b-8fa0-4f09-b36d-d528960e2605",
+      "name": "Fetch Public GitHub Repositories"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Keep the original behavior: only include public repos with a description and language.\nconst repositories = [];\nfor (const item of $input.all()) {\n  const data = item.json;\n  const repos = Array.isArray(data) ? data : (Array.isArray(data.body) ? data.body : [data]);\n  for (const repo of repos) {\n    if (\n      typeof repo.description !== 'string' || !repo.description.trim() ||\n      typeof repo.language !== 'string' || !repo.language.trim()\n    ) continue;\n    repositories.push({ json: {\n      name: repo.name,\n      description: repo.description,\n      languages: [repo.language]\n    }});\n  }\n}\nreturn repositories;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -160
+      ],
+      "id": "cd4d7f38-3f0e-42f3-b34e-efb221baa0ab",
+      "name": "Format Public Repositories"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Manually maintained repositories not returned by the public GitHub endpoint.\nconst repositories = [\n  {\n    name: \"Magistra3.0\",\n    description: \"Private information hub built with Spring Boot, SQLite, WebSockets and data connectors.\",\n    languages: [\"Java\", \"JavaScript\", \"SQL\"]\n  },\n  {\n    name: \"TraceAI\",\n    description: \"AI-based project for data processing, analysis and intelligent retrieval.\",\n    languages: [\"Python\"]\n  },\n  {\n    name: \"RAG-Project\",\n    description: \"Retrieval-Augmented Generation project combining vector search, Neo4j graph relationships and AI agents.\",\n    languages: [\"Python\", \"JavaScript\"]\n  },\n  {\n    name: \"Self-Hosted-AI\",\n    description: \"Self-hosted AI environment integrating local language models, n8n automation, PostgreSQL and Qdrant.\",\n    languages: [\"Python\", \"JavaScript\", \"SQL\"]\n  }\n];\nreturn repositories.map(repo => ({ json: repo }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        64
+      ],
+      "id": "55f5b467-4161-449e-a757-7b5cce6b8b26",
+      "name": "Private Repositories"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        128,
+        -64
+      ],
+      "id": "a38fc95e-8490-47f1-99d4-5796477cc3ea",
+      "name": "Merge Repository Sources"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shared preparation stage. Both RAG branches start from this exact normalized dataset.\nconst byName = new Map();\nfor (const item of $input.all()) {\n  const repo = item.json || {};\n  if (!repo.name) continue;\n  const name = String(repo.name).trim();\n  const description = typeof repo.description === 'string' ? repo.description.trim() : '';\n  const languages = Array.isArray(repo.languages)\n    ? repo.languages.filter(x => typeof x === 'string' && x.trim())\n    : [];\n  const existing = byName.get(name);\n  if (!existing) byName.set(name, {name, description, languages: [...new Set(languages)]});\n  else {\n    if (description.length > existing.description.length) existing.description = description;\n    existing.languages = [...new Set([...existing.languages, ...languages])];\n  }\n}\nreturn [...byName.values()].map(repo => ({\n  json: {\n    ...repo,\n    text: [\n      `Repository: ${repo.name}`,\n      `Description: ${repo.description || ''}`,\n      `Languages: ${repo.languages.join(', ')}`\n    ].join('\\n')\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -64
+      ],
+      "id": "a8f28aa2-5a2d-4a0e-ac1e-62b1c9196aaf",
+      "name": "Gather + Normalize Repository Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const repositories = $input.all().map(item => ({\n  name: item.json.name,\n  description: item.json.description,\n  languages: item.json.languages\n}));\nreturn [{\n  json: {\n    statement: `\n      UNWIND $repositories AS repo\n      MERGE (r:Repository {name: repo.name})\n      SET r.description = repo.description,\n          r.languages = repo.languages\n      WITH r, repo\n      UNWIND repo.languages AS language\n      MERGE (l:Language {name: language})\n      MERGE (r)-[:USES_LANGUAGE]->(l)\n      RETURN count(DISTINCT r) AS repositoriesProcessed\n    `,\n    parameters: { repositories }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        144
+      ],
+      "id": "3cec8e22-df53-4dfc-9c12-3a66e81d06cf",
+      "name": "Graph RAG - Build Graph Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/repos/query/v2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic bmVvNGo6dGVzdDEyMzQ1Ng=="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        112,
+        144
+      ],
+      "id": "c2310884-5fcd-41e0-b89d-607eb89cb1d2",
+      "name": "Graph RAG - Neo4j Upsert"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Use the same normalized records directly; no Neo4j read-back or merge needed.\nreturn $input.all().map(item => ({\n  json: {\n    name: item.json.name,\n    description: item.json.description,\n    languages: item.json.languages,\n    text: item.json.text\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        384
+      ],
+      "id": "8679cdf6-8130-40ca-b79b-dc489bd4c666",
+      "name": "Vector RAG - Prepare Embedding Input"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: \"nomic-embed-text\", input: $json.text } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        112,
+        384
+      ],
+      "id": "300338ed-85ca-4120-9026-f19c564ad6e4",
+      "name": "Vector RAG - Ollama Embeddings"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sourceItems = $('Vector RAG - Prepare Embedding Input').all();\nconst embeddingItems = $input.all();\nif (sourceItems.length !== embeddingItems.length) {\n  throw new Error(`Repository/embedding count mismatch: ${sourceItems.length} vs ${embeddingItems.length}`);\n}\nreturn sourceItems.map((source, index) => {\n  const repo = source.json;\n  const response = embeddingItems[index].json;\n  const embedding = response.embeddings?.[0] ?? response.body?.embeddings?.[0];\n  if (!Array.isArray(embedding)) {\n    throw new Error(`No embedding returned for ${repo.name}`);\n  }\n  if (embedding.length !== 768) {\n    throw new Error(`Expected 768 dimensions for ${repo.name}; got ${embedding.length}`);\n  }\n  return {json: {name: repo.name, embedding}};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        384
+      ],
+      "id": "b130f380-7b45-4c40-b8a0-ddd08c3a0685",
+      "name": "Vector RAG - Attach Embeddings"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n  json: {\n    statement: `\n      MATCH (r:Repository {name: $name})\n      SET r.embedding = $embedding\n      RETURN r.name AS name, size(r.embedding) AS dimensions\n    `,\n    parameters: {\n      name: item.json.name,\n      embedding: item.json.embedding\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        384
+      ],
+      "id": "bafb57a4-3f22-404b-8fa9-2bc2cdc4f252",
+      "name": "Vector RAG - Build Neo4j Upsert"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/repos/query/v2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic bmVvNGo6dGVzdDEyMzQ1Ng=="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        832,
+        384
+      ],
+      "id": "d2875a98-09ea-4cb5-8d5f-14bb36b3f885",
+      "name": "Vector RAG - Neo4j Upsert"
+    },
+    {
+      "parameters": {
+        "content": "**Embed**\n\nThe workflow collects repository data from GitHub and a predefined list of projects, then merges and organizes the data.\n\n- **Graph RAG:** Stores repositories, their descriptions, programming languages, and the relationships between them.\n- **Vector RAG:** Converts repository information into numerical representations (embeddings) and stores them to enable searches for similar projects based on meaning.",
+        "height": 304,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "ecfe2cc3-df2b-4d88-be97-c23a38c414c0",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Public GitHub Repositories",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Private Repositories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger (optional)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Public GitHub Repositories",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Private Repositories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Public GitHub Repositories": {
+      "main": [
+        [
+          {
+            "node": "Format Public Repositories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Public Repositories": {
+      "main": [
+        [
+          {
+            "node": "Merge Repository Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Private Repositories": {
+      "main": [
+        [
+          {
+            "node": "Merge Repository Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Repository Sources": {
+      "main": [
+        [
+          {
+            "node": "Gather + Normalize Repository Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gather + Normalize Repository Data": {
+      "main": [
+        [
+          {
+            "node": "Graph RAG - Build Graph Query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Vector RAG - Prepare Embedding Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Graph RAG - Build Graph Query": {
+      "main": [
+        [
+          {
+            "node": "Graph RAG - Neo4j Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector RAG - Prepare Embedding Input": {
+      "main": [
+        [
+          {
+            "node": "Vector RAG - Ollama Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector RAG - Ollama Embeddings": {
+      "main": [
+        [
+          {
+            "node": "Vector RAG - Attach Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector RAG - Attach Embeddings": {
+      "main": [
+        [
+          {
+            "node": "Vector RAG - Build Neo4j Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector RAG - Build Neo4j Upsert": {
+      "main": [
+        [
+          {
+            "node": "Vector RAG - Neo4j Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4b62f9eb-330d-43cd-b291-547b6848a724",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "nodeGroups": [],
+  "id": "Q3gOAZbzorWsSpSG",
+  "tags": []
+}
