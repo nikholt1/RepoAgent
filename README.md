@@ -77,8 +77,19 @@ Each repository has an `embedding` property containing 768 numerical values. The
 1. Small prompt causes error
 When the prompt is too small, it seems like the agent fails to retrieve the GRAPH RAG, for some reason it does not see the necessity to call the VECTOR RAG at all.
 The error message states that the database might be offline, and i get a error code 400.
+**prompt**
+``
+i am making a repo that should use graphs use
+``
 ![Short Prompt](assets/failedAgentOnGraphRag.png)
 
+2. Explicitely ask for GRAPH and VECTOR RAG results
+The prompt explicitely states that the agent should use the Graph Rag and 
+**promp**
+``
+i am making a repo that should use graphs use both Graph Rag Search and Search all repos tools to determine the best answers
+``
+![Short Prompt](assets/agentPromptOnlyVector.png)
 
 ## Setup
 
