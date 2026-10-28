@@ -192,7 +192,28 @@ for example:
 Repository: SimpleFastPost
 Description: HTTP tester with Spring Boot, SQLite, WebSockets and data connectors.
 Languages: Java, JavaScript, SQL
-``
+`` 
+## neo4J
+Most of the data configuration happens in the workflow, as seen in datasources under **Gather + Normalize Repository Data Node**
+This was not in the consideration of the workflow, but i think it fell naturally, since I may have subconsciously avoided the queries given i dont know cypher
+
+1. To find and visualize the Graph RAG i used the query:
+```
+MATCH (a)-[r]->(b)
+RETURN a, r, b
+LIMIT 100;
+```
+
+2. To see the entities in the Vector RAG i used:
+```
+MATCH (r:Repository)
+RETURN
+    r.name AS name,
+    r.description AS description,
+    r.languages AS languages,
+    r.embedding IS NOT NULL AS hasEmbedding,
+    size(r.embedding) AS embeddingDimensions;
+```
 
 ## Setup
 1. Setup neo4j to hold a instance with a database
