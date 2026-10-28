@@ -23,3 +23,11 @@ Always search with both tools to maximize coverage. Do not skip either tool, eve
 
 **Final requirement:** Do not answer a repository-related request until you have attempted both Graph RAG Search and Vector RAG Search.
 ```
+** calls only vector **
+i am making a repo that should use graphs use both Graph Rag Search and Search all repos tools to determine the best answers
+
+** failed retrieval of GRAPH RAG calls ** 
+i am making a repo that should use graphs
+
+** Calls both successfully but still get an error message **
+I am creating a repository that will use graphs, and i want to find existing repositories or implementations that make it quick and easy to integrate and work with graphs. Search my repositories using both Graph RAG and Vector RAG to identify relevant projects, libaries or reusable code that could help me implement graph functionality with minimal setup and boilerplate Recommend the most relevannt options and explain briefly what i could reuse from eacg. 
