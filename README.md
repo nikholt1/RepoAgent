@@ -1,345 +1,126 @@
-# RepoAgent — Graph RAG + Vector RAG
+# RepoAgent
 
-RepoAgent is an AI-powered repository assistant built with **n8n, Neo4j and Ollama**. It helps users discover relevant software repositories by searching repository metadata and comparing semantic similarity between project descriptions.
+RepoAgent is an AI repository assistant built with n8n, Neo4j and Ollama. It combines Graph RAG and Vector RAG to find relevant repositories based on their metadata and semantic similarity.
 
-The system combines two retrieval methods:
+## Embed
 
-- **Graph RAG:** searches structured repository information, including names, descriptions, programming languages and their relationships.
-- **Vector RAG:** embeds a user's question and searches for repositories with semantically similar embeddings.
+![Data embedding workflow](assets/embedding2.png)
 
-The AI agent combines the results to answer questions and recommend potentially reusable projects.
+The workflow retrieves public repositories from the GitHub API:
 
-## Architecture
+`https://api.github.com/users/nikholt1/repos`
 
-```mermaid
-flowchart TD
-    A[GitHub repositories + predefined projects] --> B[n8n data ingestion]
-    B --> C[Neo4j graph]
-    B --> D[Ollama embeddings]
-    D --> E[Neo4j vector index]
+It filters repositories that have a description and programming language, then merges them with a hardcoded list of private repositories that cannot be retrieved through the public API.
 
-    F[User question] --> G[Repository AI Agent]
-    G --> H[Graph RAG Search]
-    H --> C
-    G --> I[Vector RAG Search workflow]
-    I --> J[Embed question with Ollama]
-    J --> E
-    C --> G
-    E --> G
-    G --> K[Final answer]
-```
+The data is normalized into a consistent format containing the repository name, description and languages.
 
-## 1. Workflows and screenshots
+**Graph RAG:** The workflow connects to Neo4j and creates `Repository` and `Language` nodes, connecting them through `USES_LANGUAGE` relationships.
 
-### Data ingestion — Graph and Vector Embedding
+**Vector RAG:** The workflow sends the repository information to Ollama using `nomic-embed-text`. Ollama generates a 768-dimensional embedding, which is stored on the corresponding repository node in Neo4j.
 
-![Data ingestion workflow](assets/embedding2.png)
+Workflow: [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
 
-The `graphAndVectorEmbedding.json` workflow retrieves public GitHub repository metadata and combines it with a predefined list of projects. It normalizes the data and processes it through two branches:
-
-1. **Graph branch:** creates or updates repository and language nodes and their relationships in Neo4j.
-2. **Vector branch:** sends repository descriptions and metadata to Ollama, validates the 768-dimensional embeddings, and stores them on the corresponding repository nodes.
-
-The workflow can be run manually. An optional schedule trigger is configured for daily execution but is disabled in the exported workflow.
-
-**Workflow export:** [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
-
-### Vector RAG — Embed a question and retrieve repositories
-
-![Vector retrieval workflow](assets/embedNewDataAndGetSavedData.png)
-
-The `publishedSearchRepos.json` workflow receives a query from the agent, generates an embedding using `nomic-embed-text`, and queries Neo4j's `repository_embedding_index`.
-
-The workflow requests the five closest repository matches and formats the returned metadata for the agent.
-
-**Workflow export:** [`publishedSearchRepos.json`](publishedSearchRepos.json)
-
-### Repository AI Agent — Graph RAG + Vector RAG
+## Agent
 
 ![Agent workflow](assets/agent.png)
 
-The `embedAgent.json` workflow receives chat messages and passes them to an AI agent using `Llama3.2:latest`.
+The agent receives questions through the n8n chat trigger and uses the `Llama3.2:latest` model through Ollama to interpret the question and formulate an answer.
 
-The agent has two search tools:
+The agent has a system prompt requiring it to attempt both search tools before answering:
 
-- **Graph RAG Search:** searches Neo4j for matching repository names, descriptions and programming languages, including language relationships.
-- **Vector RAG Search:** calls the published search workflow to embed the question and retrieve semantically similar repositories.
+- **Graph RAG Search:** Connects directly to Neo4j and searches repository names, descriptions and programming languages.
+- **Vector RAG Search:** Calls the published `search repos` workflow to embed the question and retrieve semantically similar repositories.
 
-The agent instructions require both tools to be attempted for every repository-related question before the final answer is generated.
+The system prompt also instructs the agent to use the retrieved results, avoid inventing repository information, and disclose when a search fails or returns insufficient information.
 
-**Workflow export:** [`embedAgent.json`](embedAgent.json)
+Workflow: [`embedAgent.json`](embedAgent.json)
 
-## 2. Agent configuration and prompts
+## Published workflow — Vector search
 
-### Model configuration
+![Vector search workflow](assets/embedNewDataAndGetSavedData.png)
 
-| Component | Configuration |
-|---|---|
-| Chat model | `Llama3.2:latest` |
-| Embedding model | `nomic-embed-text` |
-| Embedding dimensions | 768 |
-| Graph database | Neo4j |
-| Workflow automation | n8n |
-| Vector index | `repository_embedding_index` |
+When the agent calls the Vector RAG tool, it passes the user's question to the published `search repos` workflow.
 
-### System prompt
+The workflow sends the question to Ollama using `nomic-embed-text` and validates that the resulting embedding contains 768 values.
 
-```text
-You are a repository assistant with access to two search tools:
-Graph RAG Search and Vector RAG Search.
+It then queries Neo4j's `repository_embedding_index` and retrieves the five closest repository matches based on vector similarity. The results are formatted and returned to the agent.
 
-MANDATORY TOOL USAGE:
+Workflow: [`publishedSearchRepos.json`](publishedSearchRepos.json)
 
-For every repository-related question or request for
-recommendations, you MUST call BOTH Graph RAG Search AND
-Vector RAG Search before answering.
+## Agent calls and results
 
-Graph RAG Search retrieves repository information using
-matching names, descriptions, programming languages, and
-stored relationships.
+The following examples show how the agent uses both tools. Add the actual execution screenshots or logs from n8n for each example.
 
-Vector RAG Search retrieves repositories based on semantic
-similarity to the user's request.
+### Example 1 — Technology search
 
-Always search with both tools. Do not skip either tool,
-even if the first tool returns sufficient results.
-Wait for both tool results before formulating your answer.
+**Question:** Which repositories use Java?
 
-Base factual claims about stored repositories exclusively
-on information returned by the search tools.
+- Graph RAG call: `[Insert tool input and retrieved results]`
+- Vector RAG call: `[Insert tool input and retrieved results]`
+- Agent answer: `[Insert actual answer]`
 
-Combine and compare both sets of results. Recommend
-repositories and potential reuse only where supported
-by the returned information.
+**Assessment:** `[Briefly assess the relevance and completeness of the results.]`
 
-Do not invent repository names, descriptions, programming
-languages, relationships, implementation details, or
-search results.
+### Example 2 — Semantic search
 
-If one tool fails or returns no results, disclose this
-and use the available results without pretending both
-searches succeeded.
+**Question:** Which repositories could help me build a graph-based application?
 
-If the information is insufficient, explicitly state
-what cannot be determined.
+- Graph RAG call: `[Insert tool input and retrieved results]`
+- Vector RAG call: `[Insert tool input and retrieved results]`
+- Agent answer: `[Insert actual answer]`
 
-Do not answer a repository-related request until you
-have attempted both search tools.
-```
+**Assessment:** `[Explain whether semantic search found relevant projects beyond direct keyword matches.]`
 
-### Tool descriptions
+### Example 3 — Limitation
 
-**Graph RAG Search**
+**Question:** Which repository contains a specific feature that is not documented in its metadata?
 
-> Search the repository graph for matching repository names, descriptions, programming languages, and language relationships. Use this for exact or keyword-based questions. Input is a search phrase.
+- Graph RAG call: `[Insert tool input and retrieved results]`
+- Vector RAG call: `[Insert tool input and retrieved results]`
+- Agent answer: `[Insert actual answer]`
 
-**Vector RAG Search**
+**Assessment:** `[Explain whether the available data was sufficient or whether the agent could not verify the feature.]`
 
-> Embed the user's query and search Neo4j for the five most semantically similar repositories. Use this to discover projects that may be relevant even when their names or descriptions do not directly match the query.
-
-The tool descriptions explain the intended roles of each search method. The system prompt establishes the requirement to attempt both tools.
-
-## 3. Example questions and results
-
-The following section should document three real executions of the agent. Include the question, both tool calls, the retrieved information, the actual final answer, and a brief assessment.
-
-### Example 1 — Finding repositories by technology
-
-**Question**
-
-> Which repositories use Java, and what are they used for?
-
-**Graph RAG tool call:** `[Insert actual tool input and output]`
-
-**Vector RAG tool call:** `[Insert actual tool input and output]`
-
-**Retrieved information:** `[Insert repository names, descriptions, languages and similarity scores where available]`
-
-**Agent's actual answer**
-
-> `[Paste the answer returned by the agent.]`
-
-**Assessment:** `[Did the graph search find the expected Java repositories? Did vector search add relevant results?]`
-
-### Example 2 — Finding similar projects
-
-**Question**
-
-> I want to build a graph-based application with a simple way to visualize and manipulate nodes and relationships. Which existing repositories could help?
-
-**Graph RAG tool call:** `[Insert actual tool input and output]`
-
-**Vector RAG tool call:** `[Insert actual tool input and output]`
-
-**Retrieved information:** `[Insert actual results from both tools]`
-
-**Agent's actual answer**
-
-> `[Paste the answer returned by the agent.]`
-
-**Assessment:** `[Were the recommendations relevant to the requested functionality? Was the agent able to identify useful projects beyond exact keyword matches?]`
-
-### Example 3 — Limitation or failure
-
-**Question**
-
-> Which repository contains a complete production-ready implementation of `[a feature not documented in the repository data]`?
-
-**Graph RAG tool call:** `[Insert actual tool input and output]`
-
-**Vector RAG tool call:** `[Insert actual tool input and output]`
-
-**Retrieved information:** `[Insert actual results, including empty results or irrelevant matches if applicable]`
-
-**Agent's actual answer**
-
-> `[Paste the answer returned by the agent.]`
-
-**Assessment and limitation:** `[Explain whether the available metadata was sufficient. For example, repository descriptions and language tags alone cannot verify undocumented implementation details or whether a project is production-ready.]`
-
-These examples should be replaced with actual execution records. Do not present illustrative answers as measured results.
-
-## 4. Data sources and Neo4j structure
+## Data sources and Neo4j
 
 ### Data sources
 
-The ingestion workflow uses two sources:
+- **Public GitHub repositories:** Retrieved from the GitHub API for `nikholt1`. Only repositories with a description and programming language are included.
+- **Private repositories:** A hardcoded list in the ingestion workflow containing `Magistra3.0`, `TraceAI`, `RAG-Project` and `Self-Hosted-AI`.
+- **Ollama:** Generates repository and query embeddings locally using `nomic-embed-text`, and provides the chat model `Llama3.2:latest`.
+- **Neo4j:** Stores repository metadata, language relationships and embeddings.
 
-1. **Public GitHub repositories:** retrieved from the GitHub user repositories API for `nikholt1`. The workflow filters out public repositories that lack a description or primary language.
-2. **Predefined project records:** manually maintained entries for projects not returned by the public-repository endpoint, including private projects.
-
-The workflow merges and deduplicates repository records by name before storing them.
-
-### Graph model
+### Graph relationships
 
 ![Neo4j graph relationships](assets/graphRelationship.png)
 
-The graph currently uses two node types and one relationship type.
+The graph uses two node types:
 
-| Element | Properties | Purpose |
-|---|---|---|
-| `Repository` | `name`, `description`, `languages`, `embedding` | Stores repository metadata and its vector representation |
-| `Language` | `name` | Represents a programming language |
-| `USES_LANGUAGE` | No properties defined in the workflow | Connects a repository to its programming languages |
+- `Repository`: stores the repository name, description, languages and embedding.
+- `Language`: stores programming language names.
 
-The relationship is directed:
-
-```text
-(:Repository)-[:USES_LANGUAGE]->(:Language)
-```
-
-The `languages` property on a repository is also stored as an array, while individual language nodes and relationships support graph traversal.
-
-### Example repository record
-
-A representative record from the predefined ingestion data is:
-
-```json
-{
-  "name": "Magistra3.0",
-  "description": "Private information hub built with Spring Boot, SQLite, WebSockets and data connectors.",
-  "languages": ["Java", "JavaScript", "SQL"]
-}
-```
-
-After embedding, the repository node also contains an `embedding` property with 768 numeric values.
+Each repository connects to its languages through `USES_LANGUAGE` relationships.
 
 ### Vector embeddings
 
-![Repository vector embeddings](assets/vetorembeddings2.png)
+![Stored vector embeddings](assets/vetorembeddings2.png)
 
-Each repository's combined text contains its name, description and programming languages. Ollama converts this text into an embedding using `nomic-embed-text`, and the workflow stores the resulting vector on the repository node.
+Each repository has an `embedding` property containing 768 numerical values. The vector index `repository_embedding_index` is used to find repositories similar to an embedded query.
 
-The vector-search workflow embeds a new user question using the same model and queries the `repository_embedding_index` for the five closest matches.
+## Setup
 
-The screenshot shows the repository, embedding dimensions and the first ten embedding values. The full vector contains 768 values.
+1. Start Neo4j and Ollama.
+2. Pull the required models:
 
-## 5. Setup and reproduction
+   ```bash
+   ollama pull llama3.2
+   ollama pull nomic-embed-text
+   ```
 
-### Prerequisites
+3. Import the three workflow JSON files into n8n.
+4. Configure the Ollama and Neo4j connections and verify the database endpoint.
+5. Create and verify the Neo4j vector index `repository_embedding_index` with 768 dimensions and cosine similarity.
+6. Run the embedding workflow to populate the graph and embeddings.
+7. Activate the workflows and test the agent through the n8n chat interface.
 
-- n8n with the workflow nodes used in the exports.
-- A running Neo4j instance with a database named `repos`.
-- Ollama accessible to n8n.
-- The `llama3.2` chat model and `nomic-embed-text` embedding model.
-- Neo4j credentials configured securely in n8n.
-
-### Step 1 — Start Ollama and pull the models
-
-```bash
-ollama pull llama3.2
-ollama pull nomic-embed-text
-```
-
-Make sure the Ollama API is reachable from n8n. The exported workflows currently use `host.docker.internal` to reach services from Docker.
-
-### Step 2 — Prepare Neo4j
-
-The workflow expects the Neo4j query endpoint to be reachable at:
-
-```text
-http://host.docker.internal:7474/db/repos/query/v2
-```
-
-Configure the endpoint and authentication for your own environment. Do not commit credentials to the repository.
-
-Create the vector index before running vector retrieval. For Neo4j versions supporting the following vector-index syntax, use:
-
-```cypher
-CREATE VECTOR INDEX repository_embedding_index IF NOT EXISTS
-FOR (r:Repository)
-ON (r.embedding)
-OPTIONS {
-  indexConfig: {
-    `vector.dimensions`: 768,
-    `vector.similarity_function`: 'cosine'
-  }
-};
-```
-
-Check your installed Neo4j version and index status if the syntax differs or the index is not online.
-
-### Step 3 — Import the workflows
-
-Import the following JSON files into n8n:
-
-- [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
-- [`publishedSearchRepos.json`](publishedSearchRepos.json)
-- [`embedAgent.json`](embedAgent.json)
-
-Review the credentials, endpoints, model settings and workflow references after import. The agent workflow references the search workflow by its n8n workflow ID, so ensure that the reference points to the imported search workflow in your instance.
-
-### Step 4 — Populate the graph and embeddings
-
-Execute the data-ingestion workflow. It will fetch public repository metadata, merge the predefined records, create or update the graph, generate embeddings and write them to Neo4j.
-
-Verify that repository nodes have an `embedding` property containing 768 values and that the vector index is online before testing retrieval.
-
-### Step 5 — Test the agent
-
-Activate the relevant workflows, open the n8n chat interface and ask a repository-related question. Check the execution record to confirm that both Graph RAG Search and Vector RAG Search were attempted and inspect their returned results before assessing the final answer.
-
-## 6. Limitations
-
-- **Metadata coverage:** the assistant can only retrieve information available in its stored repository records. It does not inspect every source file in each repository.
-- **Vector relevance:** semantically similar results are not necessarily the most technically suitable implementations.
-- **Graph coverage:** the current graph primarily models repositories and programming-language relationships; it does not represent detailed code dependencies or function-level relationships.
-- **Agent reliability:** instructions require both tools to be attempted, but actual execution logs are needed to verify that both tools ran successfully for a given question.
-- **Private repository records:** some project metadata is maintained manually, so descriptions can become outdated if not updated.
-
-## Repository files
-
-| File | Purpose |
-|---|---|
-| `embedAgent.json` | Chat agent and search-tool connections |
-| `publishedSearchRepos.json` | Query embedding and vector retrieval |
-| `graphAndVectorEmbedding.json` | Repository ingestion, graph creation and embedding storage |
-| `assets/agent.png` | Agent workflow screenshot |
-| `assets/embedNewDataAndGetSavedData.png` | Vector retrieval workflow screenshot |
-| `assets/embedding2.png` | Data-ingestion workflow screenshot |
-| `assets/graphRelationship.png` | Neo4j graph structure screenshot |
-| `assets/vetorembeddings2.png` | Example stored vector embeddings |
-
----
-
-**Security note:** Before publishing or sharing the workflow exports, remove hardcoded database authentication values and use n8n credentials or another secure configuration mechanism. If real credentials have already been published, rotate them.
+**Note:** Configure credentials securely in n8n before sharing or publishing workflow exports. The workflow endpoints and credentials may need to be adjusted for another environment.
