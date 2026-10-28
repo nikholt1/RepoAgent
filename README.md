@@ -112,6 +112,88 @@ I am creating a repository that will use graphs, and i want to find existing rep
 We used the same prompt as in example 3. and this time the LLM responded with text.
 ![Short Prompt](assets/agentSuccess.png)
 
+
+## Data Sources
+### EmbedAgent.json
+
+The agent receives user questions through the n8n chat trigger and uses Ollama's `Llama3.2:latest` model to generate answers.
+
+It has two tools:
+- **Graph RAG Search:** Queries Neo4j for matching repositories and their languages.
+- **Vector RAG Search:** Calls `publishedSearchRepos.json` to embed the query with `nomic-embed-text` and retrieve similar repositories.
+
+The system prompt instructs the agent to attempt both tools before answering and to base its responses on the retrieved data.
+
+### graphAndVectorEmbedding.json
+
+The workflow retrieves public repositories from the GitHub API and combines them with a hardcoded list of private repositories. It then normalizes and deduplicates the data.
+
+- **Graph RAG:** Creates `Repository` and `Language` nodes in Neo4j and connects them using `USES_LANGUAGE` relationships.
+- **Vector RAG:** Sends repository descriptions and languages to Ollama using `nomic-embed-text`, then stores the 768-dimensional embeddings on the repository nodes in Neo4j.
+
+The workflow can be run manually, with an optional daily schedule trigger.
+
+**Gather + Normalize Repository Data Node**
+```javascript
+
+const byName = new Map();
+
+for (const item of $input.all()) {
+  const repo = item.json || {};
+
+  if (!repo.name) continue;
+
+  const name = String(repo.name).trim();
+  const description =
+    typeof repo.description === 'string'
+      ? repo.description.trim()
+      : '';
+
+  const languages = Array.isArray(repo.languages)
+    ? repo.languages.filter(
+        x => typeof x === 'string' && x.trim()
+      )
+    : [];
+
+  const existing = byName.get(name);
+
+  if (!existing) {
+    byName.set(name, {
+      name,
+      description,
+      languages: [...new Set(languages)]
+    });
+  } else {
+    if (description.length > existing.description.length) {
+      existing.description = description;
+    }
+
+    existing.languages = [
+      ...new Set([...existing.languages, ...languages])
+    ];
+  }
+}
+
+return [...byName.values()].map(repo => ({
+  json: {
+    ...repo,
+    text: [
+      `Repository: ${repo.name}`,
+      `Description: ${repo.description || ''}`,
+      `Languages: ${repo.languages.join(', ')}`
+    ].join('\n')
+  }
+}));
+```
+this outputs: 
+for example: 
+
+``
+Repository: SimpleFastPost
+Description: HTTP tester with Spring Boot, SQLite, WebSockets and data connectors.
+Languages: Java, JavaScript, SQL
+``
+
 ## Setup
 1. Setup neo4j to hold a instance with a database
 2. Setup n8n in docker
