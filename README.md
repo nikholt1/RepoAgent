@@ -42,11 +42,11 @@ The agent has a system prompt requiring it to attempt both search tools before a
 
 The system prompt also instructs the agent to use the retrieved results, avoid inventing repository information, and disclose when a search fails or returns insufficient information.
 
-In the first Agent builder i used Ollama3.2:latest version which successfully connected, but did not want to use the tools for the example. 
-The agent instructions can be found under: agent_instructions.txt
-The Graph RAG and Vector RAG descriptions can be found under tools_descriptions.txt
-The configured Skills i prepared but did not get to test can be found under skills_instructions.txt
-The example prompts can be found under section "Examples" with corresponding errors and what i found.
+-In the first Agent builder i used Ollama3.2:latest version which successfully connected, but did not want to use the tools for the example. 
+-The agent instructions can be found under: agent_instructions.txt
+-The Graph RAG and Vector RAG descriptions can be found under tools_descriptions.txt
+-The configured Skills i prepared but did not get to test can be found under skills_instructions.txt
+-The example prompts can be found under section "Examples" with corresponding errors and what i found.
 
 Workflow: [`embedAgent.json`](embedAgent.json)
 
