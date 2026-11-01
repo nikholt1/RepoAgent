@@ -48,6 +48,8 @@ The system prompt also instructs the agent to use the retrieved results, avoid i
 - The configured Skills i prepared but did not get to test can be found under skills_instructions.txt
 - The example prompts can be found under section "Examples" with corresponding errors and what i found.
 
+
+in the workflow build agent with tools, i ended up using the Agent instructions as the system prompt, to make it work.
 Workflow: [`embedAgent.json`](embedAgent.json)
 
 ## Published workflow — Vector search
