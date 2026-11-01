@@ -100,6 +100,18 @@ i am making a repo that should use graphs
 ```
 ![Short Prompt](assets/failedAgentOnGraphRag.png)
 
+Output:
+```
+Graph convolutional networks (GCNs) are a type of neural network designed to operate on graph-structured data. They are commonly used in areas such as social network analysis, recommendation systems, and node classification.
+
+Graph convolutional networks allow information to be propagated between connected nodes, making it possible to learn relationships and patterns within graph structures.
+
+To find repositories related to this topic, I will search the graph database.
+
+{"name": "Graph_RAG_Search", "parameters": {"input": "graphs"}}
+
+```
+
 2. Explicitely ask for GRAPH and VECTOR RAG results
 
 The prompt explicitely states that the agent should use the Graph Rag and the Vector RAG but the agent determines only the need for the Vector RAG
@@ -109,6 +121,23 @@ The prompt explicitely states that the agent should use the Graph Rag and the Ve
 i am making a repo that should use graphs use both Graph Rag Search the Vector Rag and Search all repos tools to determine the best answers
 ```
 ![Short Prompt](assets/agentPromptOnlyVector.png)
+
+Output:
+```
+I will search the vector database to find repositories related to graph data structures and graph-based applications.
+
+Based on the semantic similarity search, I found the following relevant repositories:
+
+1. FoamGraph
+   A JavaScript library for creating and managing graph structures. It provides functionality for creating nodes, managing relationships, and visualizing connected data.
+
+2. Magistra3.0
+   A system that integrates different data sources and visualizes information through connected data structures.
+
+FoamGraph provides a flexible and scalable way to store and query graph data.
+
+Now let me try the vector RAG search to see if I can find any other relevant repositories.
+```
 
 3. Both RAG success prompt
 
@@ -121,13 +150,41 @@ I am creating a repository that will use graphs, and i want to find existing rep
 ```
 ![Short Prompt](assets/agent.png)
 
+Output:
+```
+There was a problem executing the workflow
+```
+Here i got an unecpected error in the chat, even though the workflow completed.
 
 4. Both RAG success and system response
 
 We used the same prompt as in example 3. and this time the LLM responded with text.
 ![Short Prompt](assets/agentSuccess.png)
 
+Output:
+```
+I will search both the graph database and the vector database to identify repositories related to graph data and graph-based applications.
 
+The Graph RAG search returned information about graph databases and graph-related technologies.
+
+The Vector RAG search returned repositories with semantically similar descriptions.
+
+Based on the search results, the top 3 repositories that use graphs are:
+
+1. Neo4j
+   A popular graph database that provides a robust and scalable platform for storing and querying graph data.
+
+2. GraphDB
+   An RDF graph database designed for storing, managing, and querying interconnected data.
+
+3. FoamGraph
+   A JavaScript library for creating and managing graph structures, including nodes and relationships.
+
+FoamGraph is particularly relevant because it provides a flexible way to represent and manage connected data.
+
+By combining Graph RAG and Vector RAG, I can retrieve both structurally related information and repositories that are semantically similar to the user's query.
+
+```
 ## Data Sources
 ### EmbedAgent.json
 
