@@ -1,0 +1,31 @@
+# Graph RAG Search
+
+Purpose:
+Retrieve repository information through graph-based matching and stored relationships.
+
+Search dimensions:
+- Repository names.
+- Repository descriptions.
+- Programming languages.
+- Stored relationships between repositories and related entities.
+
+Use this tool to find direct matches and explore explicit connections represented in the repository graph.
+
+Output handling:
+Treat returned repository metadata and relationships as the evidence source. Do not infer relationships that are not present in the returned results.
+
+# Vector RAG Search
+
+Purpose:
+Retrieve repositories based on semantic similarity to the user's request.
+
+Search dimensions:
+- Meaning and intent of the query.
+- Conceptual similarity.
+- Related technical concepts.
+- Similar functionality or problem domains.
+
+Use this tool to find repositories that may be relevant even when their names or descriptions do not contain the exact words used by the user.
+
+Output handling:
+Treat similarity as a relevance signal, not proof that two repositories share code, architecture, or implementation.
