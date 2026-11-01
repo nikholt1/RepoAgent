@@ -1,34 +1,55 @@
 # RepoAgent
 
-RepoAgent is an AI repository assistant built with n8n, Neo4j and Ollama. It combines Graph RAG and Vector RAG to find relevant repositories based on their metadata and semantic similarity.
+## Project Structure
+![Project Structure](assets/structure.png)
 
-## Embed
+The System is build with two seperate handling events, and 3 workflows.
 
-![Data embedding workflow](assets/embedding2.png)
+1. The Embedding: [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
+2. The Agent prompt [`embedAgent.json`](embedAgent.json)
+3. The query embedding and Vector RAG data retrival workflow that is published. [`publishedSearchRepos.json`](publishedSearchRepos.json)
 
+## Embedding workflow
+![Embedding](assets/embedding.png)
 The workflow retrieves public repositories from the GitHub API:
 
-`https://api.github.com/users/nikholt1/repos`
+https://api.github.com/users/nikholt1/repos
 
 It filters repositories that have a description and programming language, then merges them with a hardcoded list of private repositories that cannot be retrieved through the public API.
 
 The data is normalized into a consistent format containing the repository name, description and languages.
 
-**Graph RAG:** The workflow connects to Neo4j and creates `Repository` and `Language` nodes, connecting them through `USES_LANGUAGE` relationships.
+## Vector RAG
+Vector RAG: The embedding workflow sends the repository information to Ollama using nomic-embed-text. Ollama generates a 768-dimensional embedding, which is stored on the corresponding repository node in Neo4j.
 
-**Vector RAG:** The workflow sends the repository information to Ollama using `nomic-embed-text`. Ollama generates a 768-dimensional embedding, which is stored on the corresponding repository node in Neo4j.
+![Stored vector embeddings](assets/vetorembeddings2.png)
 
-Workflow: [`graphAndVectorEmbedding.json`](graphAndVectorEmbedding.json)
+Each repository has an `embedding` property containing 768 numerical values. The vector index `repository_embedding_index` is used to find repositories similar to an embedded query.
 
-## Agent
+## Graph RAG
+Graph RAG: The embedding workflow connects to Neo4j and creates Repository and Language nodes, connecting them through USES_LANGUAGE relationships.
+
+![Neo4j graph relationships](assets/graphRelationship.png)
+
+The graph uses two node types:
+
+- `Repository`: stores the repository name, description, languages and embedding.
+- `Language`: stores programming language names.
+
+Each repository connects to its languages through `USES_LANGUAGE` relationships.
+
+## Agent Builder
+
 Firstly the assignment specifically described the usage of the Agent builder from version 2.32.3+ the npm installation version and the docker version did not include the agent, therefore i had to manually update the modules so it would work.
 Thereafter i was able to produce a build agent that i could use multiple times in other workflows.
+
+![Agent builder](assets/agentBuilder.png)
 
 However after initially making it work, i wanted to try with ollama OpenAi workaround compatability to choose my own model, which resultet in n8n deleting all models.
 
 I managed to get a image of the agent without error:
 
-<img width="1175" height="490" alt="agentWorkflow" src="https://github.com/user-attachments/assets/653628e7-d2d0-41f3-84a9-5a70be45d192" />
+![Agent builder](assets/agentWorkflow.png)
 
 After i configured it, and it removed all the models, which i could not manually set, i tried reinstalling and making the setup again, which resulted in the same error.
 Therefore i abandoned the Agent builder feature, and resorted to using Ollama in the workflow as seen in the picture below.
@@ -50,47 +71,7 @@ The system prompt also instructs the agent to use the retrieved results, avoid i
 
 
 in the workflow build agent with tools, i ended up using the Agent instructions as the system prompt, to make it work.
-Workflow: [`embedAgent.json`](embedAgent.json)
 
-## Published workflow — Vector search
-
-![Vector search workflow](assets/embedNewDataAndGetSavedData.png)
-
-When the agent calls the Vector RAG tool, it passes the user's question to the published `search repos` workflow.
-
-The workflow sends the question to Ollama using `nomic-embed-text` and validates that the resulting embedding contains 768 values.
-
-It then queries Neo4j's `repository_embedding_index` and retrieves the five closest repository matches based on vector similarity. The results are formatted and returned to the agent.
-
-Workflow: [`publishedSearchRepos.json`](publishedSearchRepos.json)
-
-
-
-## Data sources and Neo4j
-
-### Data sources
-
-- **Public GitHub repositories:** Retrieved from the GitHub API for `nikholt1`. Only repositories with a description and programming language are included.
-- **Private repositories:** A hardcoded list in the ingestion workflow containing `Magistra3.0`, `TraceAI`, `RAG-Project` and `Self-Hosted-AI`.
-- **Ollama:** Generates repository and query embeddings locally using `nomic-embed-text`, and provides the chat model `Llama3.2:latest`.
-- **Neo4j:** Stores repository metadata, language relationships and embeddings.
-
-### Graph relationships
-
-![Neo4j graph relationships](assets/graphRelationship.png)
-
-The graph uses two node types:
-
-- `Repository`: stores the repository name, description, languages and embedding.
-- `Language`: stores programming language names.
-
-Each repository connects to its languages through `USES_LANGUAGE` relationships.
-
-### Vector embeddings
-
-![Stored vector embeddings](assets/vetorembeddings2.png)
-
-Each repository has an `embedding` property containing 768 numerical values. The vector index `repository_embedding_index` is used to find repositories similar to an embedded query.
 
 ## Examples
 1. Small prompt causes error
@@ -244,6 +225,7 @@ RETURN
 | `http://host.docker.internal:7474/db/repos/query/v2` | Sending Cypher queries to Neo4j | All three workflows |
 | `/workflow/HDdthqjIfjBwGvHE` | Calling the `search repos` workflow for vector search | `embedAgent.json` |
 | `45013730-9d9f-4f17-b31c-a08419e5b825` | Chat trigger webhook ID | `embedAgent.json` |
+
 
 ## Setup
 1. Setup neo4j to hold a instance with a database
