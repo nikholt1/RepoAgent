@@ -1,5 +1,20 @@
 # RepoAgent
 
+- [Project Structure](#project-structure)
+- [Embedding Workflow](#embedding-workflow)
+- [Vector RAG](#vector-rag)
+- [Graph RAG](#graph-rag)
+- [Agent Builder](#agent-builder)
+- [Examples](#examples)
+- [Data Sources](#data-sources)
+  - [EmbedAgent.json](#embedagentjson)
+  - [graphAndVectorEmbedding.json](#graphandvectorembeddingjson)
+- [Neo4j](#neo4j)
+- [Sources](#sources)
+- [URLs](#urls)
+- [Setup](#setup)
+
+
 ## Project Structure
 ![Project Structure](assets/structure.png)
 
