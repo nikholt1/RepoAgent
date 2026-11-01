@@ -131,7 +131,7 @@ Based on the semantic similarity search, I found the following relevant reposito
 1. FoamGraph
    A JavaScript library for creating and managing graph structures. It provides functionality for creating nodes, managing relationships, and visualizing connected data.
 
-2. Magistra3.0
+2. DB1test
    A system that integrates different data sources and visualizes information through connected data structures.
 
 FoamGraph provides a flexible and scalable way to store and query graph data.
