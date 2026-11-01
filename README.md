@@ -43,13 +43,13 @@ Each repository connects to its languages through `USES_LANGUAGE` relationships.
 Firstly the assignment specifically described the usage of the Agent builder from version 2.32.3+ the npm installation version and the docker version did not include the agent, therefore i had to manually update the modules so it would work.
 Thereafter i was able to produce a build agent that i could use multiple times in other workflows.
 
-![Agent builder](assets/agentBuilder.png)
+![Agent builder](assets/agentBuilder.PNG)
 
 However after initially making it work, i wanted to try with ollama OpenAi workaround compatability to choose my own model, which resultet in n8n deleting all models.
 
 I managed to get a image of the agent without error:
 
-![Agent builder](assets/agentWorkflow.png)
+![Agent builder](assets/agentWorkflow.PNG)
 
 After i configured it, and it removed all the models, which i could not manually set, i tried reinstalling and making the setup again, which resulted in the same error.
 Therefore i abandoned the Agent builder feature, and resorted to using Ollama in the workflow as seen in the picture below.
