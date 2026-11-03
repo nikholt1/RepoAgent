@@ -185,6 +185,29 @@ FoamGraph is particularly relevant because it provides a flexible way to represe
 By combining Graph RAG and Vector RAG, I can retrieve both structurally related information and repositories that are semantically similar to the user's query.
 
 ```
+
+5. After Agent builder implementation
+**promp**
+
+```
+I am creating a repository that will use graphs, and i want to find existing repositories or implementations that make it quick and easy to integrate and work with graphs. Search my repositories using both Graph RAG and Vector RAG to identify relevant projects, libaries or reusable code that could help me implement graph functionality with minimal setup and boilerplate Recommend the most relevannt options and explain briefly what i could reuse from each.
+```
+
+
+Output:
+```
+I can suggest some possible alternatives for you to consider:
+
+    Graph Visualization Libraries: You can consider using graph visualization libraries such as Graphviz, Gephi, or Cytoscape to integrate and work with graphs. These libraries provide a range of tools and APIs to visualize and manipulate graph data.
+    Graph Databases: Graph databases such as Neo4j, Amazon Neptune, or GraphDB can be used to store and query graph data. These databases provide a range of features and APIs to integrate and work with graphs.
+    Graph Frameworks: Graph frameworks such as Apache Giraph, Pregel, or GraphLab can be used to integrate and work with graphs. These frameworks provide a range of features and APIs to scale and optimize graph computations.
+    Python Libraries: Python libraries such as NetworkX, Graph-tool, or Py2Neo can be used to integrate and work with graphs. These libraries provide a range of features and APIs to visualize, manipulate, and query graph data.
+
+These are just a few examples, and there are many more options available depending on your specific use case and requirements. I recommend exploring these alternatives and evaluating their suitability for your project.
+
+
+```
+
 ## Data Sources
 ### EmbedAgent.json
 
