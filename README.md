@@ -54,22 +54,22 @@ The graph uses two node types:
 Each repository connects to its languages through `USES_LANGUAGE` relationships.
 
 ## Agent Builder
+The agent builder uses Ollamas Llama3.2:latest version running through a ChatGPT workaround, where i use chatGPTs request and url versioning which ollama supports. I registered 
+the credentials and the model as a "chatGPT" model, but Ollama exposed the models that i had in the ollama resources.
 
-Firstly the assignment specifically described the usage of the Agent builder from version 2.32.3+ the npm installation version and the docker version did not include the agent, therefore i had to manually update the modules so it would work.
-Thereafter i was able to produce a build agent that i could use multiple times in other workflows.
+- The agent instructions can be found under: agent_instructions.txt
+- The Graph RAG and Vector RAG descriptions can be found under tools_descriptions.txt
+- The example prompts for the entire project can be found under section "Examples" with corresponding errors and what i found.
 
-![Agent builder](assets/agentBuilder.PNG)
 
-However after initially making it work, i wanted to try with ollama OpenAi workaround compatability to choose my own model, which resultet in n8n deleting all models.
+![Short Prompt](assets/agentBuilderSuccess2.png)
 
-I managed to get a image of the agent without error:
 
-![Agent builder](assets/agentWorkflow.PNG)
-
-After i configured it, and it removed all the models, which i could not manually set, i tried reinstalling and making the setup again, which resulted in the same error.
-Therefore i abandoned the Agent builder feature, and resorted to using Ollama in the workflow as seen in the picture below.
+Before i fixed this, i likewise implemented the old version of agent, which i still wanted to show. i abandoned the Agent builder feature, and resorted to using Ollama in the workflow as seen in the picture below.
 
 ![Agent workflow](assets/agentSuccess.png)
+
+From my experience, the old version better shows the process, such as what tools it calls at what time, the reponses of the tools directly in the workflow, allows me to quicker bug fix if there are some configurations that are missing.
 
 The agent has a system prompt requiring it to attempt both search tools before answering:
 
@@ -78,11 +78,6 @@ The agent has a system prompt requiring it to attempt both search tools before a
 
 The system prompt also instructs the agent to use the retrieved results, avoid inventing repository information, and disclose when a search fails or returns insufficient information.
 
-- In the first Agent builder i used Ollama3.2:latest version which successfully connected in the credentials, but did not want to provide the models. Otherwise it correctly created the agent using the Nvidea 11B
-- The agent instructions can be found under: agent_instructions.txt
-- The Graph RAG and Vector RAG descriptions can be found under tools_descriptions.txt
-- The configured Skills i prepared but did not get to test can be found under skills_instructions.txt
-- The example prompts can be found under section "Examples" with corresponding errors and what i found.
 
 
 in the workflow build agent with tools, i ended up using the Agent instructions as the system prompt, to make it work.
@@ -186,8 +181,10 @@ By combining Graph RAG and Vector RAG, I can retrieve both structurally related 
 
 ```
 5. After implementing Agent builder
+
 This was the first time running the agent builder fully implemented. It outputted something almost unreadable, most certainly because the model wasnt running from the start, so it outputted something derived from the return of the HTTP request. The successfull prompt is in example 7.
 
+![Short Prompt](assets/repoAgentSuccess.png)
 
 
 7. After Agent builder implementation
