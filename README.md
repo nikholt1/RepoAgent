@@ -192,7 +192,7 @@ By combining Graph RAG and Vector RAG, I can retrieve both structurally related 
 ```
 I am creating a repository that will use graphs, and i want to find existing repositories or implementations that make it quick and easy to integrate and work with graphs. Search my repositories using both Graph RAG and Vector RAG to identify relevant projects, libaries or reusable code that could help me implement graph functionality with minimal setup and boilerplate Recommend the most relevannt options and explain briefly what i could reuse from each.
 ```
-
+![Short Prompt](assets/agentSuccess2.png)
 
 Output:
 ```
