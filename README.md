@@ -185,14 +185,20 @@ FoamGraph is particularly relevant because it provides a flexible way to represe
 By combining Graph RAG and Vector RAG, I can retrieve both structurally related information and repositories that are semantically similar to the user's query.
 
 ```
+5. After implementing Agent builder
+This was the first time running the agent builder fully implemented. It outputted something almost unreadable, most certainly because the model wasnt running from the start, so it outputted something derived from the return of the HTTP request. The successfull prompt is in example 7.
 
-5. After Agent builder implementation
+
+
+7. After Agent builder implementation
+
+After fixing the Agent builder, i once again tried to run the system
 **promp**
 
 ```
 I am creating a repository that will use graphs, and i want to find existing repositories or implementations that make it quick and easy to integrate and work with graphs. Search my repositories using both Graph RAG and Vector RAG to identify relevant projects, libaries or reusable code that could help me implement graph functionality with minimal setup and boilerplate Recommend the most relevannt options and explain briefly what i could reuse from each.
 ```
-![Short Prompt](assets/agentSuccess2.png)
+![Short Prompt](assets/agentBuilderSuccess2.png)
 
 Output:
 ```
